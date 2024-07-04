@@ -151,7 +151,6 @@ main {
 }
 
 .output-container {
-  overflow-y: auto;
   padding: 1em;
   flex: 1;
   display: flex;
