@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, nextTick } from 'vue';
 import { marked } from 'marked';
 
 const OLLAMA_URI = 'http://localhost:11434/api/generate';
@@ -141,8 +141,9 @@ function recordQandA ( item ) {
   qAndAs.value.push( item );
 }
 
-function scrollOutputToBottom () {
+async function scrollOutputToBottom () {
   if ( outputContainer.value ) {
+    await nextTick();
     outputContainer.value.scrollTop = outputContainer.value.scrollHeight;
   }
 }
