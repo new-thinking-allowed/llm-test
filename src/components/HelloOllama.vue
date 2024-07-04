@@ -11,8 +11,8 @@
 
     <div class="input-container">
       <div class="field border large padding">
-        <input id="input" type="text" placeholder="Type a question..." @keyup.enter="handleKeyUp"
-          :disabled="inProgress">
+        <input id="input" type="text" placeholder="Type a question..." @keyup.enter="handleKeyUp" :disabled="inProgress"
+          autocomplete="off">
         <span class="helper" v-if="noRequestSentYet">Press return to send</span>
       </div>
     </div>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { marked } from 'marked';
 
 const OLLAMA_URI = 'http://localhost:11434/api/generate';
@@ -35,6 +35,35 @@ const ANSWER = 1;
 
 // Reference to the output container
 const outputContainer = ref( null );
+
+onMounted( async () => {
+  try {
+    const res = await fetch( OLLAMA_URI, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify( {
+        stream: false,
+        keep_alive: -1,
+        model: 'llama3',
+      } ),
+    } );
+
+    if ( !res.ok ) {
+      throw new Error( `Failed to initialise: ${ res.status } ${ res.statusText }` );
+    }
+
+    const body = await res.json();
+    console.log( body );
+    return body;
+  } catch ( err ) {
+    console.error( 'Error in send function:', err );
+    throw err;
+  } finally {
+    inProgress.value = false;
+  }
+} );
 
 async function handleKeyUp ( event ) {
   if ( event.key !== 'Enter' ) {
