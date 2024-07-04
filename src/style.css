@@ -1,6 +1,4 @@
  :root {
-   --ollama-app-max-width: 1280px;
-
    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
    line-height: 1.5;
    font-weight: 400;
@@ -25,8 +23,9 @@
 
  #app {
    width: 100%;
-   max-width: var(--ollama-app-max-width);
+   max-width: 1024px;
    margin: 0 auto;
    padding: 2rem;
    text-align: center;
+   overflow-y: scroll;
  }

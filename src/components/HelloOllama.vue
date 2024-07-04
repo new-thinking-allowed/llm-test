@@ -29,14 +29,33 @@ const qAndAs = ref( [] );
 const error = ref( '' );
 const inProgress = ref( false );
 const noRequestSentYet = ref( true );
+const outputContainer = ref( null );
 
 const QUESTION = 0;
 const ANSWER = 1;
 
-// Reference to the output container
-const outputContainer = ref( null );
+qAndAs.value = [
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+
+]
 
 onMounted( async () => {
+  scrollOutputToBottom();
   try {
     const res = await fetch( OLLAMA_URI, {
       method: 'POST',
@@ -123,16 +142,13 @@ function recordQandA ( item ) {
 }
 
 function scrollOutputToBottom () {
-  // Scroll to the bottom of the output container
   if ( outputContainer.value ) {
     outputContainer.value.scrollTop = outputContainer.value.scrollHeight;
   }
 }
 
 // Watch for changes in qAndAs and scroll to bottom when new messages are added
-watch( qAndAs, () => {
-  scrollOutputToBottom();
-} );
+watch( qAndAs, scrollOutputToBottom );
 
 </script>
 
@@ -144,19 +160,18 @@ main {
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 90vh;
+  height: 85vh;
   width: 100%;
-  padding-bottom: 1em;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .output-container {
   padding: 1em;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
   width: 100%;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .input-container {
@@ -166,7 +181,7 @@ main {
   justify-content: center;
   bottom: 0;
   height: 10vh;
-  width: var(--ollama-app-max-width);
+  width: 600px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
