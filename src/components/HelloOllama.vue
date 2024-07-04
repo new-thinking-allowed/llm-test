@@ -47,6 +47,9 @@ onMounted( async () => {
         stream: false,
         keep_alive: -1,
         model: 'llama3',
+        // options: {
+        //   num_ctx: 4096
+        // }
       } ),
     } );
 
