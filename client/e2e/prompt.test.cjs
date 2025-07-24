@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
 
-const TIMEOUT = 1000 * 120; // CPU...
+const TIMEOUT = 1000 * 60 * 3; // CPU...
 const OUTPUT_PATH = path.join(__dirname, 'results.jsonl')
 
 // Full test prompts organized by category
