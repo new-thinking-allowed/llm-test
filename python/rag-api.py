@@ -30,8 +30,10 @@ async def query_rag(req: QueryRequest):
         context = rag_lib.format_context(I)
         data = rag_lib.call_llm(query, context)
     except RuntimeError as e:
+        print(f"RuntimeError: {e}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
     return {
