@@ -1,21 +1,16 @@
 <template>
   <section class="chat-container">
     <ChatOutput ref="outputContainer" :qAndAs="qAndAs" />
-    <ChatInput
-      :inProgress="inProgress"
-      :noRequestSentYet="noRequestSentYet"
-      @sendQuery="handleSendQuery"
-    />
+    <ChatInput :inProgress="inProgress" :noRequestSentYet="noRequestSentYet" @sendQuery="handleSendQuery" />
   </section>
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import { marked } from 'marked'
 import ChatOutput from './ChatOutput.vue'
 import ChatInput from './ChatInput.vue'
 import { sendToAPI } from '../composables/useChatApi.js'
-import { QUESTION, ANSWER, LOADING } from '../constants/chatTypes.js'
+import { QUESTION, ANSWER, ANSWER_ERROR, LOADING } from '../constants/chatTypes.js'
 
 const qAndAs = ref([])
 const inProgress = ref(false)
@@ -29,11 +24,10 @@ async function handleSendQuery(query) {
   noRequestSentYet.value = false
   await scrollOutputToBottom()
 
-  // Add loading answer placeholder
   recordQandA({
     type: LOADING,
     datetime: new Date(),
-    text: '<div class="spinner">Loading...</div>',
+    text: '<div>Waiting for the LLM...</div>',
   })
   await scrollOutputToBottom()
 
@@ -42,17 +36,21 @@ async function handleSendQuery(query) {
   try {
     inProgress.value = true
     const response = await sendToAPI(query)
-    // Replace loading placeholder with real answer
+
+    // Replace the loading placeholder with real answer
     qAndAs.value[loadingIndex] = {
       type: ANSWER,
       datetime: new Date(),
-      text: marked.parse(response.answer),
+      // text: response.answer,
+      ...response,
     }
+
     await scrollOutputToBottom()
-  } catch (err) {
-    // Optionally replace loading with error message
+  }
+
+  catch (err) {
     qAndAs.value[loadingIndex] = {
-      type: ANSWER,
+      type: ANSWER_ERROR,
       datetime: new Date(),
       text: `<span class="error">Error: ${err.message}</span>`,
     }

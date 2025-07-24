@@ -1,15 +1,8 @@
 <template>
   <div class="input-container">
     <div class="field border large padding">
-      <input
-        id="input"
-        type="text"
-        placeholder="Type a query..."
-        @keyup.enter="onEnter"
-        :disabled="inProgress"
-        autocomplete="off"
-        v-model="inputText"
-      />
+      <input id="input" type="text" placeholder="Type a question..." @keyup.enter="onEnter" :disabled="inProgress"
+        autocomplete="off" v-model="inputText" />
       <span class="helper" v-if="noRequestSentYet">Press return to send</span>
     </div>
   </div>

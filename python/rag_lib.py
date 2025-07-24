@@ -1,3 +1,4 @@
+import sys
 import pickle
 import time
 import json
@@ -41,46 +42,53 @@ def perform_search(query: str, k: int = 3):
 
 def format_context(I):
     formatted_chunks = []
+    source_metas = []
     for rank, idx in enumerate(I[0], start=1):
         doc = documents[idx]
         meta = metadata[idx]
 
         video_id = meta.get("video_id", "")
-        start_time = format_seconds(meta.get("start_time", 0))
-        end_time = format_seconds(meta.get("end_time", 0))
+        start_time_sec = meta.get("start_time", 0)
+        start_time_str = format_seconds(start_time_sec)
         title = meta.get("title", "")
         guest = meta.get("guest", "")
-        published_at = meta.get("publishedAt", "")
-        tags = meta.get("tags", "")
-        description = meta.get("description", "")
-
-        # url = f"https://youtube.com/watch?v={video_id}&t={int(meta.get('start_time', 0))}s"
 
         chunk_info = (
-            f"Result {rank} ({title}):\n"
-            # f"URL: {url}\n"
-            f"Start Time: {start_time}\n"
-            f"Guest: {guest}\n"
-            f"Tags: {tags}\n"
-            f"Description: {description}\n\n"
+            f"Rank {rank} ({title}):\n"
+            f"Video Title: {title}\n"
+            f"Start Time: {start_time_str}\n"
+            f"Guest: {guest}\n\n"
             f"{doc.strip()}"
         )
         formatted_chunks.append(chunk_info)
-    return "\n\n---\n\n".join(formatted_chunks)
+
+        source_metas.append({
+            "video_id": video_id,
+            "start_time_sec": start_time_sec,
+            "timestamp": start_time_str,
+            "video_title": title,
+        })
+
+    context_str = "\n\n---\n\n".join(formatted_chunks)
+    return context_str, source_metas
 
 
 def call_llm(query: str, context: str):
     rag_system_prompt = """
-Respond in JSON only: 
+Return your answer as a JSON object, with all keys and string values enclosed in double quotes:
 
 {
   "answer": "<detailed answer>",
-  "sources": [{"video ID": "...", "timestamp": "...", "video title": "..."}]
+  "sources": [{"timestamp": "...", "video_title": "..."}]
 }
+
+Use ONLY the information provided in the context below.
+Do NOT invent video IDs or URLs.
+Return the exact timestamp and video_title as found in the context.
 """
 
     rag_user_prompt = f"""
-Based on ONLY the following information, answer the question:
+Based ONLY on the following information, answer the question:
 
 Question: {query}
 
@@ -107,17 +115,41 @@ Information:
     except json.JSONDecodeError:
         raise RuntimeError(f"Failed to parse JSON response from model: {repr(json_str)}")
 
+    # Clean and normalize sources from LLM
     cleaned_sources = []
     for source in data.get("sources", []):
-        title = source.get("title", "")
+        video_title = source.get("video_title", "")
         timestamp = source.get("timestamp", "")
-        if " at " in title:
-            parts = title.rsplit(" at ", 1)
-            title = parts[0].strip()
-            timestamp = parts[1].strip()
-        cleaned_sources.append({"title": title, "timestamp": timestamp})
+        cleaned_sources.append({"video_title": video_title, "timestamp": timestamp})
 
     data["sources"] = cleaned_sources
     data["llm_response_time_sec"] = elapsed
 
     return data
+
+
+def query_with_sources(query: str, k: int = 3):
+    D, I = perform_search(query, k)
+    context, source_metas = format_context(I)
+    llm_data = call_llm(query, context)
+
+    # Merge reliable source metadata into LLM response
+    llm_sources = llm_data.get("sources", [])
+    merged_sources = []
+    for i, src in enumerate(llm_sources):
+        if i < len(source_metas):
+            merged = {
+                "video_id": source_metas[i]["video_id"],
+                "timestamp": src["timestamp"],
+                "video_title": src["video_title"]
+            }
+        else:
+            merged = src
+        merged_sources.append(merged)
+
+    if not merged_sources:
+        merged_sources = source_metas
+
+    llm_data["sources"] = merged_sources
+
+    return llm_data

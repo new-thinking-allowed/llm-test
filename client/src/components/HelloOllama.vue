@@ -11,7 +11,7 @@
 
     <div class="input-container">
       <div class="field border large padding">
-        <input id="input" type="text" placeholder="Type a query..." @keyup.enter="handleKeyUp" :disabled="inProgress"
+        <input id="input" type="text" placeholder="Type a question..." @keyup.enter="handleKeyUp" :disabled="inProgress"
           autocomplete="off">
         <span class="helper" v-if="noRequestSentYet">Press return to send</span>
       </div>
@@ -68,10 +68,14 @@ async function sendToAPI(text) {
     if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
 
     return await res.json();
-  } catch (err) {
+  }
+
+  catch (err) {
     console.error('Error in sendToAPI:', err);
     throw err;
-  } finally {
+  }
+
+  finally {
     inProgress.value = false;
   }
 }
