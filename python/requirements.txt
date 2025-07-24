@@ -1,0 +1,8 @@
+mysql-connector-python
+sentence-transformers
+numpy
+faiss-cpu
+ollama
+fastapi
+pydantic
+uvicorn
