@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
 
-const TIMEOUT = 1000 * 60 * 3; // CPU...
+const TIMEOUT = 1000 * 60 * 3; // 3 minutes timeout for CPU-bound LLM response
 const OUTPUT_PATH = path.join(__dirname, 'results.jsonl')
 
 // Full test prompts organized by category
@@ -61,11 +61,11 @@ test.describe('Log LLM responses and timing for prompts', () => {
             try {
                 await page.keyboard.press('Enter')
 
-                const responseLocator = page.locator('.chat-message')
-                await responseLocator.first().waitFor({ timeout: TIMEOUT })
+                // Wait for the first answer to appear inside the chat output
+                const answerLocator = page.locator('article.message.response div.answer')
+                await answerLocator.first().waitFor({ timeout: TIMEOUT })
 
-                const allMessages = await responseLocator.allTextContents()
-                responseText = allMessages[allMessages.length - 1] || ''
+                responseText = await answerLocator.first().innerText()
                 result.response = responseText.trim()
             } catch (err) {
                 result.response = ''
