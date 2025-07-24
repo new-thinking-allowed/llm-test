@@ -9,6 +9,10 @@ python rag_lib.py
 cd client
 bun dev         
 
+# test
+cd client
+bun run test
+
 # Build a distribution bundle in dist/
 bun run build
 ```
