@@ -1,3 +1,4 @@
+import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -26,9 +27,7 @@ class QueryRequest(BaseModel):
 async def query_rag(req: QueryRequest):
     query = req.query
     try:
-        D, I = rag_lib.perform_search(query)
-        context = rag_lib.format_context(I)
-        data = rag_lib.call_llm(query, context)
+        data = rag_lib.query_with_sources(query)
     except RuntimeError as e:
         print(f"RuntimeError: {e}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=str(e))

@@ -66,7 +66,7 @@ def format_context(I):
             "video_id": video_id,
             "start_time_sec": start_time_sec,
             "timestamp": start_time_str,
-            "video_title": title,
+            "title": title,
         })
 
     context_str = "\n\n---\n\n".join(formatted_chunks)
@@ -79,12 +79,12 @@ Return your answer as a JSON object, with all keys and string values enclosed in
 
 {
   "answer": "<detailed answer>",
-  "sources": [{"timestamp": "...", "video_title": "..."}]
+  "sources": [{"timestamp": "...", "title": "...", "video_id": "..."}]
 }
 
 Use ONLY the information provided in the context below.
 Do NOT invent video IDs or URLs.
-Return the exact timestamp and video_title as found in the context.
+Return the exact timestamp, video_id and title as found in the context.
 """
 
     rag_user_prompt = f"""
@@ -115,16 +115,7 @@ Information:
     except json.JSONDecodeError:
         raise RuntimeError(f"Failed to parse JSON response from model: {repr(json_str)}")
 
-    # Clean and normalize sources from LLM
-    cleaned_sources = []
-    for source in data.get("sources", []):
-        video_title = source.get("video_title", "")
-        timestamp = source.get("timestamp", "")
-        cleaned_sources.append({"video_title": video_title, "timestamp": timestamp})
-
-    data["sources"] = cleaned_sources
     data["llm_response_time_sec"] = elapsed
-
     return data
 
 
@@ -133,23 +124,24 @@ def query_with_sources(query: str, k: int = 3):
     context, source_metas = format_context(I)
     llm_data = call_llm(query, context)
 
-    # Merge reliable source metadata into LLM response
     llm_sources = llm_data.get("sources", [])
     merged_sources = []
-    for i, src in enumerate(llm_sources):
-        if i < len(source_metas):
-            merged = {
-                "video_id": source_metas[i]["video_id"],
-                "timestamp": src["timestamp"],
-                "video_title": src["video_title"]
-            }
-        else:
-            merged = src
-        merged_sources.append(merged)
 
-    if not merged_sources:
-        merged_sources = source_metas
+    for i, meta in enumerate(source_metas):
+        src = llm_sources[i] if i < len(llm_sources) else {}
+        merged_sources.append({
+            "video_id": meta["video_id"],
+            "timestamp": src.get("timestamp", meta["timestamp"]),
+            "title": src.get("title", meta["title"]),
+        })
 
     llm_data["sources"] = merged_sources
 
     return llm_data
+
+
+# Optional: simple test run
+if __name__ == "__main__":
+    user_query = "What does Bernardo Kastrup say about idealism and materialism?"
+    result = query_with_sources(user_query)
+    print(json.dumps(result, indent=2))
