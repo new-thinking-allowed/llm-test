@@ -1,10 +1,10 @@
 <script setup>
-import HelloOllama from './components/HelloOllama.vue'
+import ChatContainer from './components/ChatContainer.vue'
 </script>
 
 <template>
   <main>
-    <HelloOllama />
+    <ChatContainer />
   </main>
 </template>
 
