@@ -12,7 +12,16 @@ from ollama import chat
 import time
 from datetime import datetime
 
-# --- Load FAISS index and metadata ---
+index.nprobe = 10
+k = 3
+
+# --- Helper to format seconds as mm:ss ---
+def format_seconds(seconds):
+    minutes = int(seconds) // 60
+    sec = int(seconds) % 60
+    return f"{minutes:02}:{sec:02}"
+
+
 print("Loading FAISS index and documents...")
 index = faiss.read_index("index_hnsw.faiss")
 index.hnsw.efSearch = 50
@@ -20,32 +29,19 @@ index.hnsw.efSearch = 50
 with open("documents.pkl", "rb") as f:
     documents, metadata = pickle.load(f)
 
-# --- Initialize embedding model ---
 print("Loading embedding model...")
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# --- Define your query ---
 query = "What is the consensus on UFOs?"
 
-# --- Embed the query ---
 print("Embedding query...")
 query_embedding = model.encode([query]).astype('float32')
-
-# --- Search the FAISS index ---
-index.nprobe = 10
-k = 3
 
 print("Searching FAISS index...")
 start_time = time.time()
 D, I = index.search(query_embedding, k)
 elapsed = time.time() - start_time
 print(f"Search took {elapsed:.4f} seconds.")
-
-# --- Helper to format seconds as mm:ss ---
-def format_seconds(seconds):
-    minutes = int(seconds) // 60
-    sec = int(seconds) % 60
-    return f"{minutes:02}:{sec:02}"
 
 # --- Retrieve and format results with minimal metadata for reference ---
 formatted_chunks = []
@@ -76,7 +72,6 @@ Respond in JSON only:
 }}
 """
 
-# --- Construct RAG-style prompt ---
 rag_user_prompt = f"""
 Based on ONLY the following information, answer the question:
 
@@ -86,7 +81,6 @@ Information:
 {context}
 """
 
-# --- Send query to Ollama ---
 print("Querying via Ollama...")
 start_time = time.time()
 response = chat(
@@ -97,8 +91,7 @@ response = chat(
     ]
 )
 
-# --- Output the response ---
-print("\n--- Response ---")
+print("\n# Response")
 print(response['message']['content'])
 
 elapsed = time.time() - start_time

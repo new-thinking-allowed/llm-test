@@ -2,16 +2,16 @@
   <section class="chat-container">
     <div class="output-container" ref="outputContainer">
       <article v-for="(item, index) in qAndAs" :key="index"
-        :class="{ 'message': true, 'question': item.type === QUESTION, 'response': item.type === 'ANSWER' }">
+        :class="{ 'message': true, 'query': item.type === QUESTION, 'response': item.type === ANSWER }">
         <p class="datetime"><time>{{ item.datetime.toLocaleTimeString() }}</time></p>
-        <div v-if="item.type === QUESTION" class="question">{{ item.text }}</div>
+        <div v-if="item.type === QUESTION" class="query">{{ item.text }}</div>
         <div v-if="item.type === ANSWER" class="response" v-html="item.text"></div>
       </article>
     </div>
 
     <div class="input-container">
       <div class="field border large padding">
-        <input id="input" type="text" placeholder="Type a question..." @keyup.enter="handleKeyUp" :disabled="inProgress"
+        <input id="input" type="text" placeholder="Type a query..." @keyup.enter="handleKeyUp" :disabled="inProgress"
           autocomplete="off">
         <span class="helper" v-if="noRequestSentYet">Press return to send</span>
       </div>
@@ -23,139 +23,78 @@
 import { ref, watch, onMounted, nextTick } from 'vue';
 import { marked } from 'marked';
 
-const OLLAMA_URI = 'http://localhost:11434/api/generate';
+const FASTAPI_URI = 'http://127.0.0.1:8000/query';
 
-const qAndAs = ref( [] );
-const error = ref( '' );
-const inProgress = ref( false );
-const noRequestSentYet = ref( true );
-const outputContainer = ref( null );
+const qAndAs = ref([]);
+const error = ref('');
+const inProgress = ref(false);
+const noRequestSentYet = ref(true);
+const outputContainer = ref(null);
 
 const QUESTION = 0;
 const ANSWER = 1;
 
-qAndAs.value = [
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: QUESTION, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
-  { type: ANSWER, datetime: new Date(), text: 'foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz ' },
+async function handleKeyUp(event) {
+  if (event.key !== 'Enter') return;
 
-]
+  const query = event.target.value.trim();
+  if (!query) return;
 
-onMounted( async () => {
+  recordQandA({ type: QUESTION, datetime: new Date(), text: query });
+  event.target.value = '';
   scrollOutputToBottom();
-  try {
-    const res = await fetch( OLLAMA_URI, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify( {
-        stream: false,
-        keep_alive: -1,
-        model: 'llama3',
-        // options: {
-        //   num_ctx: 4096
-        // }
-      } ),
-    } );
-
-    if ( !res.ok ) {
-      throw new Error( `Failed to initialise: ${ res.status } ${ res.statusText }` );
-    }
-
-    const body = await res.json();
-    console.log( body );
-    return body;
-  } catch ( err ) {
-    console.error( 'Error in send function:', err );
-    throw err;
-  } finally {
-    inProgress.value = false;
-  }
-} );
-
-async function handleKeyUp ( event ) {
-  if ( event.key !== 'Enter' ) {
-    return;
-  }
-
-  const question = event.target.value.trim();
 
   try {
-    recordQandA( { type: QUESTION, datetime: new Date(), text: question } );
-    event.target.value = '';
+    const response = await sendToAPI(query);
+    recordQandA({ type: ANSWER, datetime: new Date(), text: marked.parse(response.answer) });
     scrollOutputToBottom();
-    const response = await send( question );
-    recordQandA( { type: ANSWER, datetime: new Date( response.created_at ), text: marked.parse( response.response ) } );
-    scrollOutputToBottom();
-  } catch ( err ) {
+  } catch (err) {
     error.value = err.message || 'Unknown error occurred';
   }
 }
 
-async function send ( text ) {
+async function sendToAPI(text) {
   inProgress.value = true;
   noRequestSentYet.value = false;
   try {
-    const res = await fetch( OLLAMA_URI, {
+    const res = await fetch(FASTAPI_URI, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify( {
-        stream: false,
-        prompt: text,
-        model: 'llama3',
-      } ),
-    } );
+      body: JSON.stringify({ query: text }),
+    });
 
-    if ( !res.ok ) {
-      throw new Error( `Failed to fetch: ${ res.status } ${ res.statusText }` );
-    }
+    if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
 
-    const body = await res.json();
-    console.log( body );
-    return body;
-  } catch ( err ) {
-    console.error( 'Error in send function:', err );
+    return await res.json();
+  } catch (err) {
+    console.error('Error in sendToAPI:', err);
     throw err;
   } finally {
     inProgress.value = false;
   }
 }
 
-function recordQandA ( item ) {
-  qAndAs.value.push( item );
+function recordQandA(item) {
+  qAndAs.value.push(item);
 }
 
-async function scrollOutputToBottom () {
-  if ( outputContainer.value ) {
+async function scrollOutputToBottom() {
+  if (outputContainer.value) {
     await nextTick();
     outputContainer.value.scrollTop = outputContainer.value.scrollHeight;
   }
 }
 
-// Watch for changes in qAndAs and scroll to bottom when new messages are added
-watch( qAndAs, scrollOutputToBottom );
-
+watch(qAndAs, scrollOutputToBottom);
 </script>
 
 <style scoped>
 main {
   width: 100% !important;
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
 .chat-container {
@@ -165,6 +104,8 @@ main {
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
 .output-container {
@@ -173,6 +114,7 @@ main {
   width: 100%;
   height: 100%;
   overflow-y: auto;
+  background-color: #121212;
 }
 
 .input-container {
@@ -186,6 +128,8 @@ main {
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
+  background-color: #1e1e1e;
+  border-top: 1px solid #333;
 }
 
 .field {
@@ -194,24 +138,50 @@ main {
   height: 100%;
 }
 
+input[type="text"] {
+  width: 100%;
+  height: 100%;
+  padding: 0.5em;
+  background-color: #2c2c2c;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+input[type="text"]:disabled {
+  background-color: #333;
+  color: #888;
+}
+
+.helper {
+  display: block;
+  font-size: 0.8em;
+  color: #888;
+  margin-top: 0.25em;
+}
+
 .message {
   margin-bottom: 1em;
   padding: 1em;
+  border-radius: 8px;
 }
 
 .datetime {
   font-style: italic;
   margin-bottom: 0.5em;
-  opacity: 50%;
+  opacity: 0.5;
+  font-size: 0.8em;
 }
 
-.question {
-  background-color: #f0f0f0;
+.query {
+  background-color: #2a2a2a;
+  color: #f5f5f5;
   text-align: right;
 }
 
 .response {
-  background-color: #e6f7ff;
+  background-color: #1f2a36;
+  color: #d1eaff;
   text-align: left;
 }
 </style>

@@ -7,3 +7,9 @@ import HelloOllama from './components/HelloOllama.vue'
     <HelloOllama />
   </main>
 </template>
+
+<style>
+body {
+background-color: #111;
+}
+</style>
