@@ -1,5 +1,6 @@
 <script setup>
 import { QUESTION, ANSWER, ANSWER_ERROR, LOADING } from '../constants/chatTypes.js'
+import SourceList from './SourceList.vue'
 
 defineProps({
   qAndAs: {
@@ -7,12 +8,6 @@ defineProps({
     required: true,
   },
 })
-
-function parseTimestamp(timestamp) {
-  const [minutes, seconds] = timestamp.split(':').map(Number)
-  const totalSeconds = minutes * 60 + seconds
-  return `https://img.youtube.com/vi/${videoId}/default.jpg?t=${totalSeconds}`
-}
 
 </script>
 
@@ -62,6 +57,11 @@ function parseTimestamp(timestamp) {
   margin-top: 0.3rem;
   float: right;
 }
+
+.yt-thumbnail {
+  min-width: 4em;
+  max-width: 4em;
+}
 </style>
 
 <template>
@@ -77,16 +77,7 @@ function parseTimestamp(timestamp) {
         <div v-else-if="item.answer">
           <div v-if="item.answer" class="answer" v-html="item.answer"></div>
 
-          <ul v-if="item.sources && item.sources.length" class="sources">
-            <li v-for="(src, i) in item.sources" :key="i" class="source-item">
-              <a :href="`https://www.youtube.com/watch?v=${src.videoId}&t=${parseTimestamp(src.timestamp)}s`"
-                target="_blank" rel="noopener noreferrer" class="thumbnail-link">
-                <img :src="`https://img.youtube.com/vi/${src.videoId}/hqdefault.jpg`" alt="YouTube thumbnail"
-                  class="yt-thumbnail" />
-              </a>
-              <span class="source-text">{{ src.timestamp }}<span v-if="src.title"> – {{ src.title }}</span></span>
-            </li>
-          </ul>
+          <SourceList v-if="item.sources && item.sources.length" :sources="item.sources" />
 
           <div v-if="item.llm_response_time_sec" class="timing">
             Answered in {{ item.llm_response_time_sec.toFixed(1) }}s
