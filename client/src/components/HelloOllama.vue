@@ -148,8 +148,6 @@ input[type="text"] {
   padding: 0.5em;
   background-color: #2c2c2c;
   color: #f0f0f0;
-  border: 1px solid #444;
-  border-radius: 4px;
 }
 
 input[type="text"]:disabled {
@@ -167,7 +165,6 @@ input[type="text"]:disabled {
 .message {
   margin-bottom: 1em;
   padding: 1em;
-  border-radius: 8px;
 }
 
 .datetime {

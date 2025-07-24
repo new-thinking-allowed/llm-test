@@ -52,7 +52,7 @@ function handleSubmitRequest() {
 <style scoped>
 .suggestion-container {
   position: fixed;
-  bottom: 10vh;
+  bottom: 30vh;
   width: 600px;
   left: 50%;
   transform: translateX(-50%);
@@ -79,12 +79,6 @@ function handleSubmitRequest() {
 
 .suggestions button {
   background-color: #2c2c2c;
-  color: #ccc;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.4em 0.6em;
-  font-size: 0.85em;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -119,8 +113,6 @@ input[type='text'] {
   padding: 0.5em;
   background-color: #2c2c2c;
   color: #f0f0f0;
-  border: 1px solid #444;
-  border-radius: 4px;
 }
 
 input[type='text']:disabled {

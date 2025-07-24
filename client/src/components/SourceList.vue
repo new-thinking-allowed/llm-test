@@ -42,7 +42,7 @@ function parseTimestamp(timestamp) {
 
 .source-strip::-webkit-scrollbar-thumb {
     background-color: #666;
-    border-radius: 3px;
+    border-radius: 2pt;
 }
 
 .source-strip::-webkit-scrollbar-track {
@@ -58,7 +58,7 @@ function parseTimestamp(timestamp) {
 
 .yt-thumbnail {
     width: 100%;
-    border-radius: 4px;
+    border-radius: 2pt;
     display: block;
 }
 
