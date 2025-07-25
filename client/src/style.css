@@ -23,7 +23,7 @@
  #app {
    width: 100%;
    max-width: 1024px;
-   margin: 1em auto;
+   margin: 0 auto;
    padding: 1rem;
    overflow-y: scroll;
  }

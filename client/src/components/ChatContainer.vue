@@ -70,7 +70,9 @@ async function scrollOutputToBottom() {
 </script>
 
 <template>
-  <ClearContextButton :session-id="sessionId" />
+  <h1>NTA Archive Chatbot
+    <ClearContextButton :session-id="sessionId" />
+  </h1>
 
   <section class="chat-container">
     <ChatOutput ref="outputContainer" :qAndAs="qAndAs" />
@@ -79,6 +81,13 @@ async function scrollOutputToBottom() {
 </template>
 
 <style scoped>
+h1 {
+  justify-content: space-between;
+  color: #e0e0e099;
+  font-size: 2em;
+  margin-bottom: 1em;
+}
+
 .chat-container {
   display: flex;
   flex-direction: column;

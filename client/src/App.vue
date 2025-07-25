@@ -10,6 +10,6 @@ import ChatContainer from './components/ChatContainer.vue'
 
 <style>
 body {
-background-color: #111;
+  background-color: #111;
 }
 </style>
