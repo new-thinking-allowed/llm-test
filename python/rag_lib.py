@@ -106,7 +106,7 @@ def call_llm(query: str, context: str, compressed_history: list = None):
     history_str = format_history(compressed_history or [])
 
     rag_system_prompt = f"""
-You are a helpful assistant answering questions about philosophy videos.
+You are a helpful assistant answering questions about videos on philosophy and the paranormal.
 
 Here is a summary of the previous conversation:
 {history_str}
@@ -124,11 +124,11 @@ Return the exact timestamp, video_id and title as found in the context.
 """
 
     rag_user_prompt = f"""
-Based ONLY on the following information, answer the question:
+Based on ONLY the following retrieved passages, write a thorough and detailed answer to the user's question. Include context and relevant insights from the sources.
 
 Question: {query}
 
-Information:
+Passages:
 {context}
 """
     start_time = time.time()
