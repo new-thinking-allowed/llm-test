@@ -7,15 +7,19 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import ChatOutput from './ChatOutput.vue'
-import ChatInput from './ChatInput.vue'
+import { useSessionId } from '../composables/useSessionId.js'
 import { sendToAPI } from '../composables/useChatApi.js'
 import { QUESTION, ANSWER, ANSWER_ERROR, LOADING } from '../constants/chatTypes.js'
+import ChatOutput from './ChatOutput.vue'
+import ChatInput from './ChatInput.vue'
 
 const qAndAs = ref([])
 const inProgress = ref(false)
 const noRequestSentYet = ref(true)
 const outputContainer = ref(null)
+
+
+const { sessionId } = useSessionId()
 
 async function handleSendQuery(query) {
   if (!query) return
@@ -35,20 +39,19 @@ async function handleSendQuery(query) {
 
   try {
     inProgress.value = true
-    const response = await sendToAPI(query)
 
-    // Replace the loading placeholder with real answer
+    const response = await sendToAPI(query, sessionId.value)
+
     qAndAs.value[loadingIndex] = {
       type: ANSWER,
       datetime: new Date(),
-      // text: response.answer,
-      ...response,
+      text: response.answer,
+      sources: response.sources,
+      llm_response_time_sec: response.llm_response_time_sec,
     }
 
     await scrollOutputToBottom()
-  }
-
-  catch (err) {
+  } catch (err) {
     qAndAs.value[loadingIndex] = {
       type: ANSWER_ERROR,
       datetime: new Date(),

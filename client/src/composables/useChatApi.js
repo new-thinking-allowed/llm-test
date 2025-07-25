@@ -1,20 +1,23 @@
-export async function sendToAPI(query) {
+export async function sendToAPI(query, sessionId) {
     const res = await fetch('http://127.0.0.1:8000/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-    });
+        body: JSON.stringify({
+            query,
+            session_id: sessionId,
+        }),
+    })
 
     if (!res.ok) {
-        let errorDetail = '';
+        let errorDetail = ''
         try {
-            const errorJson = await res.json();
-            errorDetail = errorJson.detail || JSON.stringify(errorJson);
+            const errorJson = await res.json()
+            errorDetail = errorJson.detail || JSON.stringify(errorJson)
         } catch {
-            errorDetail = res.statusText;
+            errorDetail = res.statusText
         }
-        throw new Error(`Failed to fetch: ${res.status} ${res.statusText} - ${errorDetail}`);
+        throw new Error(`Failed to fetch: ${res.status} ${res.statusText} - ${errorDetail}`)
     }
 
-    return res.json();
+    return res.json()
 }
