@@ -1,3 +1,44 @@
+# NTA Video Caption RAG Chatbot
+
+A Retrieval-Augmented Generation (RAG) chatbot that tries to answer user questions by searching and summarising video captions from the existing MySQL database's captions data. Powered by FAISS for fast vector similarity search and Ollama’s local LLM for natural language generation.
+
+## Features
+* Chunked video captions indexed with embeddings for efficient semantic search
+* Vector similarity search with FAISS HNSW index for low-latency retrieval
+* Uses sentence-transformers for generating text embeddings
+* Local, privacy-preserving LLM integration via Ollama (phi3 model) for generating detailed, context-aware answers
+* Summarizes and compresses conversation history for efficient multi-turn dialogue
+* Session-based context management with lightweight frontend state and persistent session IDs
+* FastAPI backend with Vue 3 frontend providing a smooth chat experience
+* Includes metadata linking answers to original video timestamps and titles
+
+## Tech Stack
+* MySQL for storing video caption data
+* Python 3 with FastAPI, FAISS, sentence-transformers, Ollama
+* Vue 3 (Composition API) for frontend UI
+* LocalStorage for session persistence on client
+* REST API for chat queries
+
+## Set Up
+
+Install Ollama from https://ollama.com, then:
+
+```bash
+ollama pull phi3
+```
+
+```bash
+cd python
+pip install --upgrade pip
+pip install -r requirements.txt
+python create_index.py
+
+cd client
+bun run install
+```
+
+## Running
+
 ```bash
 # Start the server at http://127.0.0.1:8000
 cd python
