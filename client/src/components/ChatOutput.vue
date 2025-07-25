@@ -1,32 +1,19 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import { QUESTION, ANSWER, ANSWER_ERROR, LOADING } from '../constants/chatTypes.js'
 import SourceList from './SourceList.vue'
 
-const props = defineProps({
+defineProps({
   qAndAs: {
     type: Array,
     required: true,
   },
 })
 
-// Log when qAndAs changes
-watch(() => props.qAndAs, (newVal) => {
-  console.log('🔄 qAndAs updated:', newVal)
-}, { deep: true, immediate: true })
-
-// Log each item during rendering
-function logItem(item: any, index: number): boolean {
-  console.log(`🧾 Rendering item ${index}:`, item)
-  return false // No-op for template
-}
 </script>
 
 <template>
   <div class="chat-output" ref="output">
     <template v-for="(item, index) in qAndAs" :key="index">
-      <!-- Logging call (doesn't render anything) -->
-      <div v-if="logItem(item, index)"></div>
 
       <article v-if="item && typeof item.type !== 'undefined'" :class="{
         message: true,
@@ -50,7 +37,7 @@ function logItem(item: any, index: number): boolean {
 
 <style scoped>
 .chat-output {
-  padding: 1rem;
+  padding: 1em;
   background-color: #1e1e1e;
   overflow-y: auto;
   flex: 1;
@@ -59,8 +46,8 @@ function logItem(item: any, index: number): boolean {
 }
 
 .message {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
+  margin-bottom: 1em;
+  padding: 0.75em;
   border-radius: 8pt;
   max-width: 80%;
 }
@@ -78,20 +65,20 @@ function logItem(item: any, index: number): boolean {
 }
 
 .answer {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.5em;
 }
 
 .sources {
-  font-size: 0.9rem;
+  font-size: 0.9em;
   color: #aaa;
-  margin-top: 0.5rem;
-  padding-left: 1.2rem;
+  margin-top: 0.5em;
+  padding-left: 1.2em;
 }
 
 .timing {
-  font-size: 0.75rem;
+  font-size: 0.75em;
   color: #666;
-  margin-top: 0.3rem;
+  margin-top: 0.3em;
   float: right;
 }
 
