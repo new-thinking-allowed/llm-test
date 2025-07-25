@@ -12,9 +12,10 @@ A Retrieval-Augmented Generation (RAG) chatbot that tries to answer user questio
 * FastAPI backend with Vue 3 frontend providing a smooth chat experience
 * Includes metadata linking answers to original video timestamps and titles
 
-
-![./README/initial.png](./README/initial.png)
-![./README/answers.png](./README/answers.png)
+<div style="display: flex; gap: 10px;">
+  <img src="./README/initial.png" alt="Initial view" width="300" />
+  <img src="./README/answers.png" alt="Answer format" width="300" />
+</div>
 
 ## Tech Stack
 * MySQL for storing video caption data
