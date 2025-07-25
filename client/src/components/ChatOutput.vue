@@ -15,12 +15,20 @@ defineProps({
   <div class="chat-output" ref="output">
     <template v-for="(item, index) in qAndAs" :key="index">
 
+      <div class="message-time" :class="{
+        queryTime: item.type === QUESTION,
+        responseTime: item.type === ANSWER || item.type === LOADING,
+      }">
+        {{ new Date().toLocaleTimeString() }}
+      </div>
+
       <article v-if="item && typeof item.type !== 'undefined'" :class="{
         message: true,
         query: item.type === QUESTION,
         response: item.type === ANSWER || item.type === LOADING,
         error: item.type === ANSWER_ERROR,
       }">
+
         <div v-if="item.text" v-html="item.text"></div>
 
         <div v-if="item.type === ANSWER">
@@ -46,6 +54,7 @@ defineProps({
 }
 
 .message {
+  margin-top: 0;
   margin-bottom: 1em;
   padding: 0.75em;
   border-radius: 8pt;
@@ -59,7 +68,8 @@ defineProps({
 }
 
 .response {
-  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
   background-color: #333333;
   color: #cccccc;
 }
@@ -75,11 +85,27 @@ defineProps({
   padding-left: 1.2em;
 }
 
+.message-time,
 .timing {
   font-size: 0.75em;
   color: #666;
   margin-top: 0.3em;
   float: right;
+}
+
+.queryTime,
+.responseTime {
+  display: block;
+  margin: 0;
+  margin-top: 1em;
+}
+
+.responseTime {
+  margin-right: auto;
+}
+
+.queryTime {
+  margin-left: auto;
 }
 
 .yt-thumbnail {
