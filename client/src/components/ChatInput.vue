@@ -7,8 +7,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['sendQuery'])
 
-console.log('Child prop noRequestSentYet:', props.noRequestSentYet)
-
 const inputText = ref('')
 
 // Suggestions (these can be randomized or rotated later)
