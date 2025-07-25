@@ -124,7 +124,7 @@ Return the exact timestamp, video_id and title as found in the context.
 """
 
     rag_user_prompt = f"""
-Based on ONLY the following retrieved passages, write a thorough and detailed answer to the user's question. Include context and relevant insights from the sources.
+Based on ONLY the following retrieved passages, write a thorough and detailed answer to the user's question. Include context and relevant insights from the sources. No need to quote video_id or timestamp in the body of your answer since you will provide the sources in JSON.
 
 Question: {query}
 
