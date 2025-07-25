@@ -16,6 +16,14 @@ with open("documents.pkl", "rb") as f:
 
 print("Loading embedding model...")
 model = SentenceTransformer('all-MiniLM-L6-v2')
+tokenizer = model.tokenizer
+MAX_TOKENS_PER_CHUNK = 300
+
+
+def truncate_text(text: str, max_tokens: int = MAX_TOKENS_PER_CHUNK) -> str:
+    """Truncate a text to a max token length using the embedding model's tokenizer."""
+    tokens = tokenizer.encode(text, max_length=max_tokens, truncation=True)
+    return tokenizer.decode(tokens, skip_special_tokens=True)
 
 
 def format_seconds(seconds: float) -> str:
@@ -43,9 +51,12 @@ def perform_search(query: str, k: int = 3):
 def format_context(I):
     formatted_chunks = []
     source_metas = []
+
     for rank, idx in enumerate(I[0], start=1):
-        doc = documents[idx]
+        raw_doc = documents[idx]
         meta = metadata[idx]
+
+        doc = truncate_text(raw_doc)
 
         video_id = meta.get("video_id", "")
         start_time_sec = meta.get("start_time", 0)
@@ -124,23 +135,22 @@ def query_with_sources(query: str, k: int = 3):
     context, source_metas = format_context(I)
     llm_data = call_llm(query, context)
 
+    # Merge model's source data with internal metadata (fallbacks if keys missing)
     llm_sources = llm_data.get("sources", [])
-    merged_sources = []
-
-    for i, meta in enumerate(source_metas):
-        src = llm_sources[i] if i < len(llm_sources) else {}
-        merged_sources.append({
+    merged_sources = [
+        {
             "video_id": meta["video_id"],
-            "timestamp": src.get("timestamp", meta["timestamp"]),
-            "title": src.get("title", meta["title"]),
-        })
+            "timestamp": llm_sources[i].get("timestamp", meta["timestamp"]) if i < len(llm_sources) else meta["timestamp"],
+            "title": llm_sources[i].get("title", meta["title"]) if i < len(llm_sources) else meta["title"],
+        }
+        for i, meta in enumerate(source_metas)
+    ]
 
     llm_data["sources"] = merged_sources
-
     return llm_data
 
 
-# Optional: simple test run
+# Optional test
 if __name__ == "__main__":
     user_query = "What does Bernardo Kastrup say about idealism and materialism?"
     result = query_with_sources(user_query)

@@ -4,7 +4,35 @@ import faiss
 import numpy as np
 import pickle
 
-# Connect to MySQL
+INDEX_PATH = "index.faiss"
+MODEL_NAME = "BAAI/bge-small-en-v1.5"
+BATCH_SIZE = 1000
+MAX_LINES_PER_CHUNK = 20
+MAX_SECONDS_PER_CHUNK = 30.0
+MAX_TOKENS_PER_CHUNK = 300
+
+# Load embedding model and tokenizer
+model = SentenceTransformer(MODEL_NAME)
+tokenizer = model.tokenizer
+
+def truncate_text(text, max_tokens=MAX_TOKENS_PER_CHUNK):
+    tokens = tokenizer(text, truncation=True, max_length=max_tokens, return_tensors="pt")
+    return tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
+
+def flush_chunk(documents, metadata, chunk_lines, video_id, start_time, end_time, info):
+    if not chunk_lines:
+        return
+    chunk_text = " ".join(chunk_lines)
+    chunk_text = truncate_text(chunk_text)
+    documents.append(chunk_text)
+    metadata.append({
+        "video_id": video_id,
+        "start_time": start_time,
+        "end_time": end_time,
+        **info
+    })
+
+# Connect to MySQL and query data
 conn = connect(
     host="localhost",
     user="root",
@@ -28,20 +56,9 @@ JOIN video v ON c.video_id = v.id
 ORDER BY c.video_id, c.time
 """)
 
-BATCH_SIZE = 1000
-
-# Parameters for chunking
-MAX_LINES_PER_CHUNK = 20
-MAX_SECONDS_PER_CHUNK = 30.0
-
-documents = []
-metadata = []
-
-current_chunk_lines = []
-current_chunk_video = None
-current_chunk_start_time = None
-current_chunk_end_time = None
-current_chunk_info = None
+documents, metadata = [], []
+chunk_lines = []
+current_video, start_time, end_time, info = None, None, None, {}
 
 while True:
     rows = cursor.fetchmany(BATCH_SIZE)
@@ -49,26 +66,15 @@ while True:
         break
 
     for row in rows:
-        video_id = row['video_id']
-        time_sec = float(row['time'])
-        text = row['text']
+        video_id, time_sec, text = row["video_id"], float(row["time"]), row["text"]
 
-        if current_chunk_video != video_id:
-            if current_chunk_lines:
-                chunk_text = " ".join(current_chunk_lines)
-                metadata.append({
-                    "video_id": current_chunk_video,
-                    "start_time": current_chunk_start_time,
-                    "end_time": current_chunk_end_time,
-                    **current_chunk_info
-                })
-                documents.append(chunk_text)
-                current_chunk_lines = []
-
-            current_chunk_video = video_id
-            current_chunk_start_time = time_sec
-            current_chunk_end_time = time_sec
-            current_chunk_info = {
+        # New video = flush previous
+        if video_id != current_video:
+            flush_chunk(documents, metadata, chunk_lines, current_video, start_time, end_time, info)
+            chunk_lines = []
+            current_video = video_id
+            start_time = end_time = time_sec
+            info = {
                 "title": row["title"],
                 "description": row["description"],
                 "publishedAt": str(row["publishedAt"]),
@@ -76,51 +82,28 @@ while True:
                 "tags": row["tags"]
             }
 
-        duration = time_sec - current_chunk_start_time
+        duration = time_sec - start_time
+        if len(chunk_lines) >= MAX_LINES_PER_CHUNK or duration > MAX_SECONDS_PER_CHUNK:
+            flush_chunk(documents, metadata, chunk_lines, current_video, start_time, end_time, info)
+            chunk_lines = []
+            start_time = time_sec
 
-        if (len(current_chunk_lines) >= MAX_LINES_PER_CHUNK) or (duration > MAX_SECONDS_PER_CHUNK):
-            chunk_text = " ".join(current_chunk_lines)
-            metadata.append({
-                "video_id": current_chunk_video,
-                "start_time": current_chunk_start_time,
-                "end_time": current_chunk_end_time,
-                **current_chunk_info
-            })
-            documents.append(chunk_text)
-            current_chunk_lines = []
-            current_chunk_start_time = time_sec
-            current_chunk_end_time = time_sec
+        chunk_lines.append(text)
+        end_time = time_sec
 
-        current_chunk_lines.append(text)
-        current_chunk_end_time = time_sec
-
-# Flush the last chunk
-if current_chunk_lines:
-    chunk_text = " ".join(current_chunk_lines)
-    metadata.append({
-        "video_id": current_chunk_video,
-        "start_time": current_chunk_start_time,
-        "end_time": current_chunk_end_time,
-        **current_chunk_info
-    })
-    documents.append(chunk_text)
+# Flush last chunk
+flush_chunk(documents, metadata, chunk_lines, current_video, start_time, end_time, info)
 
 cursor.close()
 conn.close()
 
-# Embedding
-model = SentenceTransformer('all-MiniLM-L6-v2')
-embeddings = model.encode(documents, convert_to_numpy=True).astype('float32')
-
-# FAISS index
-dim = embeddings.shape[1]
-index = faiss.IndexHNSWFlat(dim, 32)
+# Embed and save
+embeddings = model.encode(documents, convert_to_numpy=True).astype("float32")
+index = faiss.IndexHNSWFlat(embeddings.shape[1], 32)
 index.add(embeddings)
 
-print(f"FAISS HNSW index built with {index.ntotal} chunks.")
-
-faiss.write_index(index, "index_hnsw.faiss")
+faiss.write_index(index, INDEX_PATH)
 with open("documents.pkl", "wb") as f:
     pickle.dump((documents, metadata), f)
 
-print("FAISS HNSW index written to index_hnsw.faiss")
+print(f"Built FAISS index with {index.ntotal} entries. Saved to {INDEX_PATH}.")
