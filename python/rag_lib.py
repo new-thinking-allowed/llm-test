@@ -1,14 +1,12 @@
-from transformers import AutoTokenizer
+import sys
+import pickle
+import time
+import json
+import re
+import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
-import pickle
-import re
-import json
-import time
 from ollama import chat
-
-MODEL_NAME = "BAAI/bge-small-en-v1.5"
-MAX_TOKENS_PER_CHUNK = 300
 
 print("Loading FAISS index and documents...")
 index = faiss.read_index("index_hnsw.faiss")
@@ -17,21 +15,38 @@ index.hnsw.efSearch = 50
 with open("documents.pkl", "rb") as f:
     documents, metadata = pickle.load(f)
 
-print("Loading embedding model and tokenizer...")
-model = SentenceTransformer(MODEL_NAME)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+print("Loading embedding model...")
+model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+tokenizer = model.tokenizer
+MAX_TOKENS_PER_CHUNK = 300
 
 
 def truncate_text(text: str, max_tokens: int = MAX_TOKENS_PER_CHUNK) -> str:
-    tokens = tokenizer(text, truncation=True, max_length=max_tokens, return_tensors="pt")
-    return tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
+    tokens = tokenizer.encode(text, max_length=max_tokens, truncation=True)
+    return tokenizer.decode(tokens, skip_special_tokens=True)
+
+
+def format_seconds(seconds: float) -> str:
+    minutes = int(seconds) // 60
+    sec = int(seconds) % 60
+    return f"{minutes:02}:{sec:02}"
+
+
+def extract_json(text: str):
+    json_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if json_match:
+        return json_match.group(1)
+    json_match = re.search(r"(\{.*\})", text, re.DOTALL)
+    if json_match:
+        return json_match.group(1)
+    return None
 
 
 def perform_search(query: str, k: int = 3):
-    # Important: prefix query with 'query: ' for BGE model
-    query_embedding = model.encode([f"query: {query}"]).astype('float32')
+    query_embedding = model.encode([f"query: {query}"], normalize_embeddings=True).astype('float32')
     D, I = index.search(query_embedding, k)
     return D, I
+
 
 def summarize_answer(answer: str) -> str:
     summary_prompt = f"Summarize this answer in one concise sentence:\n\n{answer}"
@@ -40,6 +55,7 @@ def summarize_answer(answer: str) -> str:
         messages=[{"role": "user", "content": summary_prompt}]
     )
     return response["message"]["content"].strip()
+
 
 def format_context(I):
     formatted_chunks = []
@@ -78,9 +94,6 @@ def format_context(I):
 
 
 def format_history(history: list[dict[str, str]]) -> str:
-    """
-    Turns a list of {'question': ..., 'answer': ...} into a readable summary string.
-    """
     lines = []
     for i, item in enumerate(history, 1):
         q = item.get("question", "").strip()
@@ -90,7 +103,6 @@ def format_history(history: list[dict[str, str]]) -> str:
 
 
 def call_llm(query: str, context: str, compressed_history: list = None):
-    # Compose conversation history summary text
     history_str = format_history(compressed_history or [])
 
     rag_system_prompt = f"""
@@ -143,15 +155,6 @@ Information:
     return data
 
 
-def summarize_answer(answer: str) -> str:
-    summary_prompt = f"Summarize this answer in one concise sentence:\n\n{answer}"
-    response = chat(
-        model="phi3",
-        messages=[{"role": "user", "content": summary_prompt}]
-    )
-    return response["message"]["content"].strip()
-
-
 def query_with_sources(query: str, k: int = 3, conversation_history: list = None):
     conversation_history = conversation_history or []
 
@@ -159,15 +162,12 @@ def query_with_sources(query: str, k: int = 3, conversation_history: list = None
     context, source_metas = format_context(I)
     llm_data = call_llm(query, context, conversation_history)
 
-    # Full detailed answer for user
     full_answer = llm_data.get("answer", "")
-
     conversation_history.append({
         "question": query,
         "answer": summarize_answer(full_answer)
     })
 
-    # Merge model's source data with internal metadata (fallbacks if keys missing)
     llm_sources = llm_data.get("sources", [])
     merged_sources = [
         {
@@ -183,7 +183,6 @@ def query_with_sources(query: str, k: int = 3, conversation_history: list = None
     return llm_data, conversation_history
 
 
-# Example usage
 if __name__ == "__main__":
     conversation_history = [
         {
@@ -197,7 +196,6 @@ if __name__ == "__main__":
 
     print(json.dumps(result, indent=2))
 
-    # conversation_history now has the new summary appended
     print("\nUpdated conversation history:")
     for turn in conversation_history:
         print(f"Q: {turn['question']}\nA: {turn['answer']}\n")

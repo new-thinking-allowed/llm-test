@@ -17,14 +17,14 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 def truncate_text(text, max_tokens=MAX_TOKENS_PER_CHUNK):
     tokens = tokenizer(text, truncation=True, max_length=max_tokens, return_tensors="pt")
-    return tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
+    truncated = tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
+    return "passage: " + truncated  
 
 def flush_chunk(documents, metadata, chunk_lines, video_id, start_time, end_time, info):
     if not chunk_lines:
         return
     chunk_text = " ".join(chunk_lines)
     chunk_text = truncate_text(chunk_text)
-    chunk_text = "passage: " + chunk_text  # Prefix required by BGE model!
     documents.append(chunk_text)
     metadata.append({
         "video_id": video_id,
