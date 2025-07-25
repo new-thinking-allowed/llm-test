@@ -42,38 +42,44 @@ const prompts = [
 
 test.describe('Log LLM responses and timing for prompts', () => {
     test.beforeAll(() => {
-        if (fs.existsSync(OUTPUT_PATH)) fs.unlinkSync(OUTPUT_PATH)
+        if (fs.existsSync(OUTPUT_PATH)) {
+            fs.unlinkSync(OUTPUT_PATH)
+            console.log('Removed ' + OUTPUT_PATH);
+        }
+    })
+
+    test.afterAll(() => {
+        const lines = fs.readFileSync(OUTPUT_PATH, 'utf-8').trim().split('\n')
+        console.log(`\nCompleted ${lines.length}/${prompts.length} prompts.\nLog: ${OUTPUT_PATH}`)
     })
 
     for (const prompt of prompts) {
         test(`Prompt: ${prompt}`, async ({ page }) => {
             const result = { prompt }
 
-            await page.goto('http://localhost:5173')
-
-            const input = page.locator('input[type="text"]')
-            await input.fill(prompt)
-
-            const start = Date.now()
-            let error = null
-            let responseText = ''
-
             try {
+                await page.goto('http://localhost:5173')
+
+                const input = page.locator('input[type="text"]')
+                await input.fill(prompt)
+
+                const start = Date.now()
+                let responseText = ''
+
                 await page.keyboard.press('Enter')
 
-                // Wait for the first answer to appear inside the chat output
+                // Wait for the answer to appear inside the chat output
                 const answerLocator = page.locator('article.message.response div.answer')
                 await answerLocator.first().waitFor({ timeout: TIMEOUT })
 
                 responseText = await answerLocator.first().innerText()
                 result.response = responseText.trim()
             } catch (err) {
-                result.response = ''
-                error = String(err)
+                // result.response = ''
+                result.error = String(err)
             }
 
             result.timeMs = Date.now() - start
-            result.error = error
 
             fs.appendFileSync(OUTPUT_PATH, JSON.stringify(result) + '\n')
         })
