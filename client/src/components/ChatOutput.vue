@@ -9,6 +9,13 @@ defineProps({
   },
 })
 
+function parseSecondsToTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  if (!seconds) return minutes + ' minutes';
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
 </script>
 
 <template>
@@ -35,7 +42,7 @@ defineProps({
           <SourceList v-if="item.sources?.length" :sources="item.sources" />
 
           <div v-if="typeof item.llm_response_time_sec === 'number'" class="timing">
-            Answered in {{ item.llm_response_time_sec.toFixed(1) }}s
+            Answered in {{ parseSecondsToTime(item.llm_response_time_sec) }}s
           </div>
         </div>
       </article>

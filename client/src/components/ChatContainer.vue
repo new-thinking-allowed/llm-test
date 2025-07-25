@@ -12,7 +12,6 @@ const inProgress = ref(false)
 const noRequestSentYet = ref(true)
 const outputContainer = ref(null)
 
-
 const { sessionId } = useSessionId()
 
 async function handleSendQuery(query) {
@@ -92,7 +91,7 @@ h1 {
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 85vh;
+  height: 82vh;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;

@@ -7,6 +7,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['sendQuery'])
 
+console.log('Child prop noRequestSentYet:', props.noRequestSentYet)
+
 const inputText = ref('')
 
 // Suggestions (these can be randomized or rotated later)
@@ -44,7 +46,7 @@ function handleSubmitRequest() {
     <div class="field border large padding">
       <input id="input" type="text" placeholder="Type a question..." @keyup.enter="handleSubmitRequest"
         :disabled="inProgress" autocomplete="off" v-model="inputText" />
-      <span class="helper" v-if="noRequestSentYet">Press return to send</span>
+      <span class="helper" v-if="noRequestSentYet && inputText.length">Press return to send</span>
     </div>
   </div>
 </template>
@@ -101,7 +103,7 @@ function handleSubmitRequest() {
 }
 
 .field {
-  margin-top: 2em;
+  margin-top: 1em;
   width: 100%;
   height: 100%;
 }
@@ -123,6 +125,7 @@ input[type='text']:disabled {
   display: block;
   font-size: 0.8em;
   color: #888;
-  margin-top: 0.25em;
+  position: relative;
+  top: -2em;
 }
 </style>
