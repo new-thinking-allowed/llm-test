@@ -31,8 +31,8 @@ function parseTimestamp(timestamp) {
 .source-strip {
     display: flex;
     overflow-x: auto;
-    gap: 2rem;
-    padding: 0.5rem 0;
+    gap: 1em;
+    padding: 1.5em 0 0;
     scrollbar-width: thin;
 }
 
