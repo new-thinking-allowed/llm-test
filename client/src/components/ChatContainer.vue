@@ -1,10 +1,3 @@
-<template>
-  <section class="chat-container">
-    <ChatOutput ref="outputContainer" :qAndAs="qAndAs" />
-    <ChatInput :inProgress="inProgress" :noRequestSentYet="noRequestSentYet" @sendQuery="handleSendQuery" />
-  </section>
-</template>
-
 <script setup>
 import { ref, nextTick } from 'vue'
 import { useSessionId } from '../composables/useSessionId.js'
@@ -12,6 +5,7 @@ import { sendChatToAPI } from '../composables/useChatApi.js'
 import { QUESTION, ANSWER, ANSWER_ERROR, LOADING } from '../constants/chatTypes.js'
 import ChatOutput from './ChatOutput.vue'
 import ChatInput from './ChatInput.vue'
+import ClearContextButton from './ClearContextButton.vue'
 
 const qAndAs = ref([])
 const inProgress = ref(false)
@@ -74,6 +68,15 @@ async function scrollOutputToBottom() {
   }
 }
 </script>
+
+<template>
+  <ClearContextButton :session-id="sessionId" />
+
+  <section class="chat-container">
+    <ChatOutput ref="outputContainer" :qAndAs="qAndAs" />
+    <ChatInput :inProgress="inProgress" :noRequestSentYet="noRequestSentYet" @sendQuery="handleSendQuery" />
+  </section>
+</template>
 
 <style scoped>
 .chat-container {

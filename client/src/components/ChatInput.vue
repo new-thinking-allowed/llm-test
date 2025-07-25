@@ -78,12 +78,11 @@ function handleSubmitRequest() {
 }
 
 .suggestions button {
-  background-color: #2c2c2c;
   transition: background 0.2s;
 }
 
 .suggestions button:hover {
-  background-color: #3c3c3c;
+  border-color: #777;
 }
 
 .input-container {
