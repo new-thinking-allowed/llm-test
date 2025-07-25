@@ -85,7 +85,8 @@ h1 {
   justify-content: space-between;
   color: #e0e0e099;
   font-size: 2em;
-  margin-bottom: 1em;
+  margin: 1em;
+  margin-top: 0;
 }
 
 .chat-container {
