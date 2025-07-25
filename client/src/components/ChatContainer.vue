@@ -8,7 +8,7 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { useSessionId } from '../composables/useSessionId.js'
-import { sendToAPI } from '../composables/useChatApi.js'
+import { sendChatToAPI } from '../composables/useChatApi.js'
 import { QUESTION, ANSWER, ANSWER_ERROR, LOADING } from '../constants/chatTypes.js'
 import ChatOutput from './ChatOutput.vue'
 import ChatInput from './ChatInput.vue'
@@ -40,7 +40,7 @@ async function handleSendQuery(query) {
   try {
     inProgress.value = true
 
-    const response = await sendToAPI(query, sessionId.value)
+    const response = await sendChatToAPI(query, sessionId.value)
 
     qAndAs.value[loadingIndex] = {
       type: ANSWER,

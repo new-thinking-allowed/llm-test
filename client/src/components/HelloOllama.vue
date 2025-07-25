@@ -45,7 +45,7 @@ async function handleKeyUp(event) {
   scrollOutputToBottom();
 
   try {
-    const response = await sendToAPI(query);
+    const response = await sendChatToAPI(query);
     recordQandA({ type: ANSWER, datetime: new Date(), text: marked.parse(response.answer) });
     scrollOutputToBottom();
   } catch (err) {
@@ -53,7 +53,7 @@ async function handleKeyUp(event) {
   }
 }
 
-async function sendToAPI(text) {
+async function sendChatToAPI(text) {
   inProgress.value = true;
   noRequestSentYet.value = false;
   try {
@@ -71,7 +71,7 @@ async function sendToAPI(text) {
   }
 
   catch (err) {
-    console.error('Error in sendToAPI:', err);
+    console.error('Error in sendChatToAPI:', err);
     throw err;
   }
 
