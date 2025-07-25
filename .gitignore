@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 __pycache__
+client/test-results/
+client/e2e/results.jsonl
