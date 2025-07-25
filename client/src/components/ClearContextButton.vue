@@ -6,46 +6,42 @@ const props = defineProps<{
 }>()
 
 const isClearing = ref(false)
-const resultMessage = ref<string | null>(null)
+const buttonText = ref('Clear Session Context')
 
 const clearContext = async () => {
     if (!props.sessionId) return
 
     isClearing.value = true
-    resultMessage.value = null
+    buttonText.value = 'Clearing…'
 
     try {
         const res = await fetch(`http://localhost:8000/context/${props.sessionId}`, {
             method: 'DELETE',
         })
 
+        const data = await res.json()
+
         if (!res.ok) {
-            const data = await res.json()
             throw new Error(data.detail || 'Unknown error')
         }
 
-        const data = await res.json()
-        resultMessage.value = data.message
+        buttonText.value = data.message || 'Cleared!'
     }
     catch (err: any) {
-        resultMessage.value = `Failed: ${err.message}`
+        buttonText.value = `Failed: ${err.message}`
     }
     finally {
         isClearing.value = false
+
+        setTimeout(() => {
+            buttonText.value = 'Clear Session Context'
+        }, 5000)
     }
 }
 </script>
 
 <template>
-    <div>
-        <button @click="clearContext" :disabled="isClearing" class="small">
-            {{ isClearing ? 'Clearing…' : 'Clear Session Context' }}
-        </button>
-        <p v-if="resultMessage" class="mt-2 text-sm text-gray-700">
-            {{ resultMessage }}
-        </p>
-    </div>
+    <button @click="clearContext" :disabled="isClearing" class="small">
+        {{ buttonText }}
+    </button>
 </template>
-
-<!-- <style scoped>
-</style> -->
