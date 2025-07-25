@@ -21,7 +21,7 @@ function parseTimestamp(timestamp) {
                     class="yt-thumbnail" />
             </a>
             <div class="source-title">
-                {{ src.title || 'Untitled' }}
+                {{ src.title || '' }}
             </div>
         </div>
     </div>
