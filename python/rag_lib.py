@@ -91,7 +91,6 @@ def format_context(I):
     return context_str, source_metas
 
 
-# New: Summarize & format previous conversation history for prompt injection
 def format_history(history: list[dict[str, str]]) -> str:
     """
     Turns a list of {'question': ..., 'answer': ...} into a readable summary string.
@@ -158,7 +157,6 @@ Information:
     return data
 
 
-# Add this summarize_answer function (needs your existing `chat` function)
 def summarize_answer(answer: str) -> str:
     summary_prompt = f"Summarize this answer in one concise sentence:\n\n{answer}"
     response = chat(
@@ -168,7 +166,6 @@ def summarize_answer(answer: str) -> str:
     return response["message"]["content"].strip()
 
 
-# Modify query_with_sources to accept and update conversation history
 def query_with_sources(query: str, k: int = 3, conversation_history: list = None):
     conversation_history = conversation_history or []
 
@@ -176,16 +173,12 @@ def query_with_sources(query: str, k: int = 3, conversation_history: list = None
     context, source_metas = format_context(I)
     llm_data = call_llm(query, context, conversation_history)
 
-    # Full detailed answer to return
+    # Full detailed answer for user
     full_answer = llm_data.get("answer", "")
 
-    # Summarize answer for context history storage
-    summary = summarize_answer(full_answer)
-
-    # Update conversation history with the new Q&A summary
     conversation_history.append({
         "question": query,
-        "answer": summary
+        "answer": summarize_answer(full_answer)
     })
 
     # Merge model's source data with internal metadata (fallbacks if keys missing)
@@ -201,7 +194,6 @@ def query_with_sources(query: str, k: int = 3, conversation_history: list = None
 
     llm_data["sources"] = merged_sources
 
-    # Return full answer + updated history so the caller can keep track
     return llm_data, conversation_history
 
 
