@@ -1,11 +1,14 @@
-import sys
-import pickle
-import time
-import json
-import re
+from transformers import AutoTokenizer
 from sentence_transformers import SentenceTransformer
 import faiss
+import pickle
+import re
+import json
+import time
 from ollama import chat
+
+MODEL_NAME = "BAAI/bge-small-en-v1.5"
+MAX_TOKENS_PER_CHUNK = 300
 
 print("Loading FAISS index and documents...")
 index = faiss.read_index("index_hnsw.faiss")
@@ -14,36 +17,19 @@ index.hnsw.efSearch = 50
 with open("documents.pkl", "rb") as f:
     documents, metadata = pickle.load(f)
 
-print("Loading embedding model...")
-model = SentenceTransformer('all-MiniLM-L6-v2')
-tokenizer = model.tokenizer
-MAX_TOKENS_PER_CHUNK = 300
+print("Loading embedding model and tokenizer...")
+model = SentenceTransformer(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 
 def truncate_text(text: str, max_tokens: int = MAX_TOKENS_PER_CHUNK) -> str:
-    """Truncate a text to a max token length using the embedding model's tokenizer."""
-    tokens = tokenizer.encode(text, max_length=max_tokens, truncation=True)
-    return tokenizer.decode(tokens, skip_special_tokens=True)
-
-
-def format_seconds(seconds: float) -> str:
-    minutes = int(seconds) // 60
-    sec = int(seconds) % 60
-    return f"{minutes:02}:{sec:02}"
-
-
-def extract_json(text: str):
-    json_match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
-    if json_match:
-        return json_match.group(1)
-    json_match = re.search(r"(\{.*\})", text, re.DOTALL)
-    if json_match:
-        return json_match.group(1)
-    return None
+    tokens = tokenizer(text, truncation=True, max_length=max_tokens, return_tensors="pt")
+    return tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
 
 
 def perform_search(query: str, k: int = 3):
-    query_embedding = model.encode([query]).astype('float32')
+    # Important: prefix query with 'query: ' for BGE model
+    query_embedding = model.encode([f"query: {query}"]).astype('float32')
     D, I = index.search(query_embedding, k)
     return D, I
 

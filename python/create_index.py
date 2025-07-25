@@ -1,7 +1,7 @@
 from mysql.connector import connect
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 import faiss
-import numpy as np
 import pickle
 
 INDEX_PATH = "index.faiss"
@@ -13,7 +13,7 @@ MAX_TOKENS_PER_CHUNK = 300
 
 # Load embedding model and tokenizer
 model = SentenceTransformer(MODEL_NAME)
-tokenizer = model.tokenizer
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 def truncate_text(text, max_tokens=MAX_TOKENS_PER_CHUNK):
     tokens = tokenizer(text, truncation=True, max_length=max_tokens, return_tensors="pt")
@@ -24,6 +24,7 @@ def flush_chunk(documents, metadata, chunk_lines, video_id, start_time, end_time
         return
     chunk_text = " ".join(chunk_lines)
     chunk_text = truncate_text(chunk_text)
+    chunk_text = "passage: " + chunk_text  # Prefix required by BGE model!
     documents.append(chunk_text)
     metadata.append({
         "video_id": video_id,
@@ -32,7 +33,6 @@ def flush_chunk(documents, metadata, chunk_lines, video_id, start_time, end_time
         **info
     })
 
-# Connect to MySQL and query data
 conn = connect(
     host="localhost",
     user="root",
