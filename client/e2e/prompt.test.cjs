@@ -54,34 +54,33 @@ test.describe('Log LLM responses and timing for prompts', () => {
     })
 
     for (const prompt of prompts) {
+
         test(`Prompt: ${prompt}`, async ({ page }) => {
             const result = { prompt }
+            const start = Date.now()
 
             try {
                 await page.goto('http://localhost:5173')
 
                 const input = page.locator('input[type="text"]')
                 await input.fill(prompt)
-
-                const start = Date.now()
-                let responseText = ''
-
                 await page.keyboard.press('Enter')
 
-                // Wait for the answer to appear inside the chat output
                 const answerLocator = page.locator('article.message.response div.answer')
                 await answerLocator.first().waitFor({ timeout: TIMEOUT })
 
-                responseText = await answerLocator.first().innerText()
-                result.response = responseText.trim()
+                result.response = (await answerLocator.first().innerText()).trim()
             } catch (err) {
-                // result.response = ''
                 result.error = String(err)
+            } finally {
+                result.timeMs = Date.now() - start
+                try {
+                    fs.appendFileSync(OUTPUT_PATH, JSON.stringify(result) + '\n')
+                } catch (e) {
+                    console.error('Failed to write result:', e)
+                }
             }
-
-            result.timeMs = Date.now() - start
-
-            fs.appendFileSync(OUTPUT_PATH, JSON.stringify(result) + '\n')
         })
+
     }
 })
