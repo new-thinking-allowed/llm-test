@@ -11,7 +11,7 @@ INDEX_PATH = "index.faiss"
 BATCH_SIZE = 1000
 MAX_LINES_PER_CHUNK = 20
 MAX_SECONDS_PER_CHUNK = 30.0
-MAX_TOKENS_PER_CHUNK = 300
+MAX_TOKENS_PER_CHUNK = 300 # 400 for Magyarul
 
 # Load embedding model and tokenizer
 model = SentenceTransformer(MODEL_NAME)
@@ -20,7 +20,8 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 def truncate_text(text, max_tokens=MAX_TOKENS_PER_CHUNK):
     tokens = tokenizer(text, truncation=True, max_length=max_tokens, return_tensors="pt")
     truncated = tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
-    return "passage: " + truncated  
+    return "passage: " + truncated 
+    # For "paraphrase-multilingual-MiniLM-L12-v2" just return truncated
 
 def flush_chunk(documents, metadata, chunk_lines, video_id, start_time, end_time, info):
     if not chunk_lines:
