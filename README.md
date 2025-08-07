@@ -66,7 +66,7 @@ bun run build
 http://127.0.0.1:8000/docs
 
 
-## Test Data
+## Test Questions
 
 ### PHILOSOPHY & CONSCIOUSNESS
 
@@ -121,3 +121,8 @@ Summarize Bernardo Kastrup’s argument for idealism.
 What were the most surprising claims made by Stephan Schwartz?
 
 What did Nanci Trivellato say about the out-of-body experience?
+
+## To Do
+
+* Support use of external APIs when funded
+* Tests well on Hungarian legal documents using the commented-out model
