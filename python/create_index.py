@@ -4,8 +4,10 @@ from transformers import AutoTokenizer
 import faiss
 import pickle
 
-INDEX_PATH = "index.faiss"
+# For Hungarian:
+# MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # Or "intfloat/multilingual-e5-small"
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
+INDEX_PATH = "index.faiss"
 BATCH_SIZE = 1000
 MAX_LINES_PER_CHUNK = 20
 MAX_SECONDS_PER_CHUNK = 30.0
